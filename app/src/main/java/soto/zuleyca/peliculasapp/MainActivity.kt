@@ -7,21 +7,16 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import soto.zuleyca.peliculasapp.modelos.Repositorio
-import soto.zuleyca.peliculasapp.ui.theme.PeliculasAppTheme
-import soto.zuleyca.peliculasapp.viewmodels.UsuarioViewModel
-import soto.zuleyca.peliculasapp.viewmodels.UsuarioViewModelFactory
-import soto.zuleyca.peliculasapp.vistas.UsuarioScreen
+import soto.zuleyca.peliculasapp.modelos.PeliculaRepositorio
+import soto.zuleyca.peliculasapp.viewmodels.PeliculaViewModel
+import soto.zuleyca.peliculasapp.viewmodels.PeliculaViewModelFactory
+import soto.zuleyca.peliculasapp.vistas.PeliculaScreen
 
 class MainActivity : ComponentActivity() {
     private val TAG = "PELICULAS"
 
-    private val viewModel: UsuarioViewModel by viewModels {
-        UsuarioViewModelFactory(Repositorio())
+    private val viewModel: PeliculaViewModel by viewModels {
+        PeliculaViewModelFactory(PeliculaRepositorio())
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,7 +35,7 @@ class MainActivity : ComponentActivity() {
 //                    )
 //                }
 //            }
-            UsuarioScreen(viewModel = viewModel)
+            PeliculaScreen(viewModel = viewModel)
         }
     }
 
@@ -85,13 +80,5 @@ class MainActivity : ComponentActivity() {
         Toast.makeText(this, "Restart", Toast.LENGTH_SHORT).show()
         Log.d(TAG, "Restart")
     }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
 }
 
