@@ -22,4 +22,13 @@ class PeliculaRepositorio {
     fun eliminarPelicula(id: Int){
         peliculas.removeIf { it.id == id }
     }
+
+    fun editarPelicula(pelicula: Pelicula){
+        val index = peliculas.indexOfFirst { it.id == pelicula.id }
+
+        if(index != -1){
+            peliculas[index] = pelicula
+        }
+
+    }
 }

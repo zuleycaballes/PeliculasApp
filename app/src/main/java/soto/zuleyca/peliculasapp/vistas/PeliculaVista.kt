@@ -1,11 +1,13 @@
 package soto.zuleyca.peliculasapp.vistas
 
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -41,17 +43,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import soto.zuleyca.peliculasapp.modelos.Pelicula
+import soto.zuleyca.peliculasapp.modelos.Usuario
 import soto.zuleyca.peliculasapp.viewmodels.PeliculaViewModel
 
 @Composable
 fun PeliculaScreen(viewModel: PeliculaViewModel) {
     val peliculas = viewModel.peliculas.value
+    val context = LocalContext.current
     var mostrarDialogo by remember { mutableStateOf(false) }
+
+    var peliculaEditar by remember { mutableStateOf<Pelicula?>(null) }
 
     Scaffold(
         floatingActionButton = {
@@ -78,6 +85,9 @@ fun PeliculaScreen(viewModel: PeliculaViewModel) {
                     pelicula = pelicula,
                     onDelete = { id ->
                         viewModel.eliminarPelicula(id)
+                    },
+                    onLongClick ={
+                        peliculaEditar = pelicula
                     }
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -94,15 +104,27 @@ fun PeliculaScreen(viewModel: PeliculaViewModel) {
             }
         )
     }
+
+    peliculaEditar?.let { pelicula ->
+        EditarPeliculaDialog(
+            pelicula = pelicula,
+            onDismiss = { peliculaEditar = null },
+            onConfirm = { id, titulo, categoria, duracion, sinopsis, fotoUri ->
+                viewModel.editarPelicula(id, titulo, categoria, duracion, sinopsis, fotoUri)
+                peliculaEditar = null
+            }
+        )
+    }
 }
 
 @Composable
-fun PeliculaCard(
-    pelicula: Pelicula,
-    onDelete: (Int) -> Unit
-) {
+fun PeliculaCard(pelicula: Pelicula, onDelete: (Int) -> Unit, onLongClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth()
+            .combinedClickable(
+                onClick = {},
+                onLongClick = onLongClick
+            )
     ) {
         Row(
             modifier = Modifier
@@ -245,6 +267,115 @@ fun AgregarPeliculaDialog(
                             sinopsis,
                             foto?.toString()
                         )
+                    }
+                }
+            ) {
+                Text("Agregar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
+}
+
+@Composable
+fun EditarPeliculaDialog(
+    pelicula: Pelicula,
+    onDismiss: () -> Unit,
+    onConfirm: (Int, String, String, String, String, String?) -> Unit
+) {
+    var foto by remember { mutableStateOf<Uri?>(pelicula.fotoUri?.let { Uri.parse(it) }) }
+    var titulo by remember { mutableStateOf(pelicula.titulo) }
+    var categoria by remember { mutableStateOf(pelicula.categoria) }
+    var duracion by remember { mutableStateOf(pelicula.duracion) }
+    var sinopsis by remember { mutableStateOf(pelicula.sinopsis) }
+
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        foto = uri
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Editar Película") },
+        text = {
+            Column {
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(CircleShape)
+                        .background(Color.LightGray)
+                        .clickable {
+                            launcher.launch("image/*")
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (foto != null) {
+                        AsyncImage(
+                            model = foto,
+                            contentDescription = "Foto seleccionada",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.AccountCircle,
+                            contentDescription = "Elegir foto",
+                            modifier = Modifier.size(40.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = titulo,
+                    onValueChange = { titulo = it },
+                    label = { Text("Título") },
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = categoria,
+                    onValueChange = { categoria = it },
+                    label = { Text("Categoría") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = duracion,
+                    onValueChange = { duracion = it },
+                    label = { Text("Duración") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = sinopsis,
+                    onValueChange = { sinopsis = it },
+                    label = { Text("Sinopsis") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (titulo.isNotBlank()) {
+                        onConfirm(pelicula.id, titulo, categoria, duracion, sinopsis, foto?.toString())
                     }
                 }
             ) {
